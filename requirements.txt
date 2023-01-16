@@ -1,0 +1,6 @@
+python-dateutil
+fastapi
+uvicorn
+aiokafka
+fastavro
+confluent_kafka
