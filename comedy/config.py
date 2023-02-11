@@ -16,6 +16,7 @@ def read_ccloud_config(config_file):
     return conf
 
 
+
 CONFLUENT_CONFIG = read_ccloud_config(ROOT_DIR.joinpath("client.properties"))
 CONFLUENT_SCHEMA_REGISTRY_CONFIG = {
     "url": "https://psrc-mvkrw.europe-west3.gcp.confluent.cloud",

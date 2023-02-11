@@ -121,6 +121,7 @@ export default {
   margin-top: -1.25rem;
   margin-left: -1.25rem;
   margin-right: -1.25rem;
+  margin-bottom: -1.25rem;
 }
 
 

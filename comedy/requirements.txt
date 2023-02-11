@@ -1,0 +1,14 @@
+fastapi
+sqlalchemy>=2.0
+alembic
+psycopg2
+python-jose[cryptography]
+email-validator
+passlib[bcrypt]
+emails
+python-multipart
+pydantic
+uvicorn
+asyncpg
+google-api-python-client
+google_auth_oauthlib
