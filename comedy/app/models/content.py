@@ -1,14 +1,14 @@
 from app.db.base_class import Base
 from .source import Source
 from sqlalchemy import Column, INTEGER, String, DateTime, JSON, ForeignKey
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 
 class Content(Base):
     #__abstract__ = True
     __tablename__ = "content"
-    id = Column(String(100), primary_key=True)
-    title = Column(String(100))
+    id = mapped_column(String(100), primary_key=True)
+    title: Mapped[str]# = Column(String(100))
     description = Column(String, nullable=True)
     published_at = Column(DateTime)
     content_type = Column(String(32), nullable=False)
