@@ -4,6 +4,9 @@ from sqlalchemy.orm import relationship
 
 
 class Portal(Base):
+    """
+    For instance YT, 9gag, redit etc
+    """
     __tablename__ = "portal"
     id = Column(INTEGER, primary_key=True)
     portal_name = Column(String(50))
@@ -12,6 +15,9 @@ class Portal(Base):
 
 
 class Source(Base):
+    """
+    Could be a channel, subredit, nothing
+    """
     __tablename__ = "source"
     id = Column(INTEGER, primary_key=True)
     source_id = Column(String(50), nullable=True)
