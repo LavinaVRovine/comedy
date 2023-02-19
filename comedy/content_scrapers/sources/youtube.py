@@ -1,4 +1,6 @@
 from datetime import datetime
+from dateutil import parser
+
 import os
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -6,13 +8,14 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import Resource
 from comedy.config import ROOT_DIR
-from app.models.source import Source
+from app.models.source import ContentSource
+from app.models.content import YoutubeVideo
 from .common import ContentSource
 
 # TODO: del in prod
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 MAX_RESULTS = 50
-class YoutubeSource(ContentSource):
+class YoutubePortal(ContentSource):
     MAX_RESULTS = MAX_RESULTS
     YOUTUBE_API_SERVICE_NAME = "youtube"
     YOUTUBE_API_VERSION = "v3"
@@ -101,11 +104,11 @@ class YoutubeSource(ContentSource):
         return response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
 
-
-class YoutubePlaylist(YoutubeSource):
-    def __init__(self, source: Source):
+class YoutubePlaylist(YoutubePortal):
+    def __init__(self, source: ContentSource):
         super(YoutubePlaylist, self).__init__()
-        self.playlist_id = source.id
+        self.source = source
+        self.playlist_id = self.source.id
 
     def _fetch_playlist_items_page(self, next_page_token=None, maxResults:int=MAX_RESULTS):
 
@@ -119,11 +122,37 @@ class YoutubePlaylist(YoutubeSource):
         if next_page_token:
             yield from self._get_videos(page_token=next_page_token, )
 
-    def get_content(self):
-        return self._get_videos()
+    def _get_new_videos_since(self, ):
+        to_add = []
+
+        for i, v in enumerate(
+                self._get_videos()
+        ):
+            published_at = parser.parse(v["snippet"]["publishedAt"])
+            v["publishedAt"] = published_at
+            if self.source.last_checked_at and published_at >= self.source.last_checked_at:
+                break
+            # if i>10:
+            #     print("stopiter")
+            #     break
+            to_add.append(
+                v
+            )
+            return to_add
+
+    def get_content(self) -> list[YoutubeVideo]:
+        vids = self._get_new_videos_since()
+        return [
+            YoutubeVideo(id=v["snippet"]["resourceId"]["videoId"],
+                         description=v["snippet"]["description"],
+                         title=v["snippet"]["title"],
+                         thumbnails=v["snippet"]["thumbnails"],
+                         published_at=v["published_at"]) for v in vids
+        ]
+
 
 if __name__ == '__main__':
-    youtube_source = YoutubeSource()
+    youtube_source = YoutubePortal()
     bittersteel_playlist_id = "UU4tWW-toq9KKo-HL3S8D23A"
     bitterstel_channel_id = 'UC4tWW-toq9KKo-HL3S8D23A' # = "UC_x5XG1OV2P6uZZ5FSM9Ttw"
     #uploads_playilis = youtube_source.get_channels_uploaded_playlist_id(channel_id=bitterstel_channel_id)

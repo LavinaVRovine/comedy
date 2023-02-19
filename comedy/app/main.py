@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi import APIRouter
-from app.api.routers import contents, login, users
+from app.api.routers import contents, login, users, portals
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 router = APIRouter(prefix="/contents", responses={404: {"description": "Not found"}})
@@ -31,10 +31,10 @@ if settings.BACKEND_CORS_ORIGINS:
 # )
 
 api_router = APIRouter(prefix=settings.API_V1_STR,)
-api_router.include_router(login.router, tags=["login"] )
-api_router.include_router(users.router, prefix="/users", tags=["users"] )
-api_router.include_router(contents.router, prefix="/contents", tags=["users"] )
-
+api_router.include_router(login.router, tags=["login"])
+api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(contents.router, prefix="/contents", tags=["users"])
+api_router.include_router(portals.router, prefix="/portals", tags=["portals"])
 
 app.include_router(api_router)
 

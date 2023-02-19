@@ -20,6 +20,7 @@ class UserCreate(UserBase):
 # Properties to receive via API on update
 class UserUpdate(UserBase):
     password: Optional[str] = None
+    # TODO: add followed thingis here
 
 
 class UserInDBBase(UserBase):
