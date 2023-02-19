@@ -3,8 +3,13 @@ from datetime import datetime
 from typing import Optional
 
 
-class Source(BaseModel):
-    ...
+class Portal(BaseModel):
+    id: int
+    name: str
+    get_thumbnail: str
+    get_url_slug: str
+    class Config:
+        orm_mode = True
 
 
 class Content(BaseModel):

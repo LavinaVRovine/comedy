@@ -1,10 +1,10 @@
 import asyncio
-from app.models.source import Source
+from app.models.source import ContentSource
 from app.db.session import SessionLocalApp, SessionLocalAppAsync
 from sqlalchemy import select
 from datetime import datetime
 
-from content.sources.youtube import YoutubeSource, YoutubePlaylist
+from content_scrapers.sources.youtube import YoutubePortal, YoutubePlaylist
 from dateutil import parser
 from app.models.content import YoutubeVideo
 
@@ -12,15 +12,15 @@ from app.models.content import YoutubeVideo
 async def get_sources_to_refresh(since: datetime = datetime.utcnow().replace(tzinfo=None)):
     # FIXME
     since = since.replace(tzinfo=None)
-    statement = select(Source).where(
-        (Source.last_checked_at == None) | (Source.last_checked_at >= since)
+    statement = select(ContentSource).where(
+        (ContentSource.last_checked_at == None) | (ContentSource.last_checked_at >= since)
     )
 
     async with SessionLocalAppAsync() as session:
         result = await session.scalars(statement)
         return result.all()
 
-def get_new_videos(source: Source):
+def get_new_videos(source: ContentSource):
     to_add = []
     y = YoutubePlaylist(source)
     lala = y._get_videos()
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
 
     for source_to_refresh in refresh_sources:
-        to_add = get_new_videos(source_to_refresh)
+        to_add = YoutubePlaylist(source_to_refresh).get_content()
         # TODO: isnt there a new syntax for 2.0?
         with SessionLocalApp() as session:
             session.bulk_save_objects(to_add)
