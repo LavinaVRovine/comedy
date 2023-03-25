@@ -24,3 +24,6 @@ CONFLUENT_SCHEMA_REGISTRY_CONFIG = {
     "basic.auth.user.info": "YGF2AJDBSWVM6DY6:kVcj7sQRyF9VsrXmV5qn/cnUQX2EETq6cqHqDXGhtAO2rR1hvOCLSDTm669skA59"
 
 }
+
+ENV = os.getenv("ENV", "dev")
+DEBUGGING = ENV == "dev"
