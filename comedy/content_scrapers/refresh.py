@@ -1,5 +1,5 @@
 import asyncio
-from app.models.source import ContentSource
+from app.models.content_source import ContentSource
 from app.db.session import SessionLocalApp, SessionLocalAppAsync
 from sqlalchemy import select
 from datetime import datetime
