@@ -8,7 +8,7 @@ from app.models.user import User
 from app.models.content_source import Portal
 from app.models.user_content import UserPortal
 
-from app.schemas.user_portal import UserPortalCreate, UserPortalUpdate
+from app.schemas.user_portal_and_source import UserPortalCreate, UserPortalUpdate
 
 # TODO: not certain i like these Crud helpers. I mean its nice, but it gets fairly blackboxy
 class CRUDUserPortal(CRUDBase[UserPortal, UserPortalCreate, UserPortalUpdate]):

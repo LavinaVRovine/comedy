@@ -13,3 +13,7 @@ asyncpg
 google-api-python-client
 google_auth_oauthlib
 python-slugify
+celery
+flower
+redis
+isodate

@@ -17,12 +17,9 @@ class Content(BaseModel):
     title: str
     description: Optional[str]
     published_at: datetime
+    thumbnails: Optional[dict]
+    get_duration: float|None
     # source: Source
     class Config:
         orm_mode = True
 
-class YoutubeVideo(Content):
-    thumbnails: Optional[dict]
-
-class NinegagPost(Content):
-    thumbnailz: int

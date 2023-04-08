@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .content import Content
     from .user import User
-    from .user_portal import UserPortal
+    from .user_content import UserPortal
 
 from sqlalchemy import INTEGER, String, DateTime, ForeignKey, UniqueConstraint, JSON
 from datetime import datetime

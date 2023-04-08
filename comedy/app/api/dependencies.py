@@ -24,8 +24,8 @@ def get_current_user(
         #token: str = Depends(reusable_oauth2)  uncoment
 ) -> models.User:
     # iam tired of logging in
-    for _ in range(0, 10):
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    #for _ in range(0, 10):
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     return crud.user.get(db, id=1)
 
     try:

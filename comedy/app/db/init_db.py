@@ -4,12 +4,12 @@ from app import crud, schemas
 from app.core.config import settings
 from app.db import base  # noqa: F401
 from app.models import Portal, ContentSource
-from app.models.user_content import UserPortal, UserSource
+from app.models.user_content import UserPortal, UserSource, UserContent
 # make sure all SQL Alchemy models are imported (app.db.base) before initializing DB
 # otherwise, SQL Alchemy might fail to initialize relationships properly
 # for more details: https://github.com/tiangolo/full-stack-fastapi-postgresql/issues/28
 
-
+from content_scrapers.refresh import refresh_portal
 def init_db(db: Session, engine=None) -> None:
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create
@@ -58,3 +58,14 @@ def init_db(db: Session, engine=None) -> None:
         db.add(u_p)
         db.add(u_s)
         db.commit()
+
+    refresh_portal()
+    seen_content = UserContent(
+            content_id=1,
+            user=user
+        )
+
+    db.add(seen_content)
+
+    db.commit()
+    print()
