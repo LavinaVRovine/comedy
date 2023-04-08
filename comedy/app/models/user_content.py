@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, relationship
 from app.db.base_class import Base
 from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
-    from app.models import User, Portal, ContentSource
+    from app.models import User, Portal, ContentSource, Content
 
 
 class UserPortal(Base):
@@ -31,3 +31,14 @@ class UserSource(Base):
     user_portal: Mapped[UserPortal] = relationship(back_populates="user_sources")
 
     source: Mapped["ContentSource"] = relationship()
+
+
+class UserContent(Base):
+    __tablename__ = "user_content"
+    id = Column(Integer, primary_key=True)
+    seen = Column(Boolean, default=True)
+
+    content_id = Column(Integer, ForeignKey('content.id'))
+    user_id = Column(Integer, ForeignKey('user.id'))
+    content: Mapped["Content"] = relationship()
+    user: Mapped["User"] = relationship()

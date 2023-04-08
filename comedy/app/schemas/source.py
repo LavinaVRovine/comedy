@@ -1,8 +1,21 @@
 from pydantic import BaseModel
+from .content import Content
 
+class SourceSimplified(BaseModel):
+    id: int
 
-class SourceBase(BaseModel):
+class SourceUpdate(SourceSimplified):
     ...
 
-class SourceUpdate(SourceBase):
-    ...
+
+class SourceBase(SourceSimplified):
+    id: int
+    source_id: str | None
+    source_name: str
+
+    class Config:
+        orm_mode = True
+
+
+class SourceFull(SourceBase):
+    contents: None

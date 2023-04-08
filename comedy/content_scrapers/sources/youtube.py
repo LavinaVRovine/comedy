@@ -1,17 +1,20 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
-
+import pytz
 import os
+from dataclasses import dataclass
+import isodate
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import Resource
-from comedy.config import ROOT_DIR
 
-from app.models.content import YoutubeVideo
-from .common import ContentSource
-
+from config import DEBUGGING, ROOT_DIR
+from app.models.content import YoutubeVideo, Topic
+from .common import ContentSource, ReturnedContent
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 # TODO: del in prod
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 MAX_RESULTS = 50
@@ -105,47 +108,106 @@ class YoutubePortal(ContentSource):
 
 
 class YoutubePlaylist(YoutubePortal):
+
     def __init__(self, source: ContentSource):
         super(YoutubePlaylist, self).__init__()
         self.source = source
         self.playlist_id = self.source.source_id
+        self.new_content = None
+        self.new_content_tags = None
 
-    def _fetch_playlist_items_page(self, next_page_token=None, maxResults:int=MAX_RESULTS):
+    def _fetch_playlist_items_page(self, next_page_token=None, maxResults: int = MAX_RESULTS):
 
         return self.service.playlistItems().list(maxResults=maxResults, part="snippet", pageToken=next_page_token,
                                                  playlistId=self.playlist_id, ).execute()
 
+    def _fetch_video_details_page(self, video_ids, next_page_token=None, maxResults: int = MAX_RESULTS):
+
+        return self.service.videos().list(maxResults=maxResults, part="contentDetails,topicDetails",
+                                          pageToken=next_page_token,
+                                          id=video_ids, ).execute()
+
     def _get_videos(self, page_token=None) -> list[dict]:
-        response = self._fetch_playlist_items_page(next_page_token=page_token )
+        response = self._fetch_playlist_items_page(next_page_token=page_token)
         yield from response["items"]
         next_page_token = response.get("nextPageToken", None)
         if next_page_token:
             yield from self._get_videos(page_token=next_page_token, )
 
-    def _get_new_videos_since(self, ):
-        to_add = []
+    def _get_video_details(self, video_ids: list[str], page_token=None) -> list[dict]:
 
+        response = self._fetch_video_details_page(video_ids=video_ids, next_page_token=page_token)
+        yield from response["items"]
+        next_page_token = response.get("nextPageToken", None)
+        if next_page_token:
+            yield from self._get_video_details(page_token=next_page_token, video_ids=video_ids, )
+
+    def _get_new_videos_since(self, ) -> dict:
+        """
+        Get "new videos". THis is '2' calls, one for playlist-list and another for details.
+        Getting just ids first would work, but there is no timestamp in returned, hence would not be able to limit
+        so this way seems better for quota?
+        :return:
+        """
+
+        to_add_dict = {}
         for i, v in enumerate(
                 self._get_videos()
         ):
             published_at = parser.parse(v["snippet"]["publishedAt"])
             v["publishedAt"] = published_at
-            if self.source.last_checked_at and published_at >= self.source.last_checked_at:
-                break
-            # if i>10:
-            #     print("stopiter")
-            #     break
-            to_add.append(
-                v
-            )
-            return to_add
+            video_id = v["snippet"]["resourceId"]["videoId"]
 
-    def get_content(self) -> list[YoutubeVideo]:
-        vids = self._get_new_videos_since()
-        return [
-            YoutubeVideo(id=v["snippet"]["resourceId"]["videoId"],
-                         description=v["snippet"]["description"],
-                         title=v["snippet"]["title"],
-                         thumbnails=v["snippet"]["thumbnails"],
-                         published_at=v["publishedAt"]) for v in vids
-        ]
+            if not DEBUGGING:
+                print("CARE WE ARE ALWAYS RETURNING EVEN EXISTING ONES TO KNOW THE REFRESH WORKS?")
+                # TODO: this pytz and utc has to be done better
+                if self.source.last_checked_at and published_at <= self.source.last_checked_at.astimezone(pytz.utc):
+                    break
+            to_add_dict[video_id] = v
+            if i > 10:
+                print("HARDCODED stopiter")
+                break
+        additional_details = self._get_video_details([video_id for video_id in to_add_dict.keys()])
+        for video_details in additional_details:
+            print(video_details)
+            to_add_dict[video_details["id"]] = to_add_dict[video_details["id"]] | {k:v for k,v in video_details.items() if k in ("contentDetails", "topicDetails")}
+        return to_add_dict
+
+    def prepare_instances(self, response_dict: dict, topics: list[Topic]) -> list[YoutubeVideo]:
+        """
+
+        :param response_dict:
+        :param topics: fairly SHORT list of possible topics
+        :return:
+        """
+        videos = []
+        for k, v in response_dict.items():
+            this_vid_topics = filter(lambda x: x.wiki_link in [t for t in v["topicDetails"].get("topicCategories", [])], topics)
+
+            videos.append(
+                YoutubeVideo(target_system_id=k,
+                             description=v["snippet"]["description"],
+                             title=v["snippet"]["title"],
+                             thumbnails=v["snippet"]["thumbnails"],
+                             published_at=v["publishedAt"],
+                             duration=isodate.parse_duration(v["contentDetails"]["duration"]).total_seconds(),
+                             topics=list(this_vid_topics),
+                             source=self.source)
+            )
+        return videos
+
+
+    def get_content(self) -> ReturnedContent:
+        # TODO: why dafuq i dont assign this to some nice instance variable and work with it afterwards?
+        response_dict: dict = self._get_new_videos_since()
+        # for vd in video_details["items"]:
+        #     duration = vd["contentDetails"]["duration"]
+        #     topic_categories: list = vd["topicDetails"]["topicCategories"]
+        #     duration: timedelta = isodate.parse_duration(duration)
+        # print()
+        topics = []
+        for v in response_dict.values():
+            topics += v["topicDetails"].get("topicCategories", [])
+
+        return ReturnedContent(content=response_dict, topics=set(topics))
+

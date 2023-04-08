@@ -10,6 +10,42 @@ services:
       - '5432:5432'
     volumes:
       - db:/var/lib/postgresql/data
+  queue:
+    # image: rabbitmq:3
+    # Using the below image instead is required to enable the "Broker" tab in the flower UI:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    #
+    # You also have to change the flower command
+  # todo pridej command atp
+#  flower:
+#    image: mher/flower
+#    command:
+#      - "--broker=amqp://guest@queue:5672//"
+#      # For the "Broker" tab to work in the flower UI, uncomment the following command argument,
+#      # and change the queue service's image as well
+#      - "--broker_api=http://guest:guest@queue:15672/api//"
+#
+
+#  celeryworker:
+#    image: '${DOCKER_IMAGE_CELERYWORKER?Variable not set}:${TAG-latest}'
+#    depends_on:
+#      - db
+#      - queue
+#    command:
+#      - celery worker -A app.worker -l info -Q main-queue -c 1
+#    build:
+#      context: ./backend
+#      dockerfile: celeryworker.dockerfile
+#      args:
+#        INSTALL_DEV: ${INSTALL_DEV-false}
+
 volumes:
   db:
     driver: local

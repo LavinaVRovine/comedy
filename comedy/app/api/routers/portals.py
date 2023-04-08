@@ -19,9 +19,16 @@ def get_supported_portals(
 ):
     return crud.crud_portal.get_supported_portals(db)
 
+@router.post("/",
+             #"/portal_slug
+             tags=["portals"], response_model=schemas.Msg
+             )
+def refresh_portal(current_user: models.User = Depends(deps.get_current_active_superuser)):
+    crud.crud_portal.refresh_portal()
+    return {"msg": "Portal queued for refresh"}
 
 @router.get("/me/portals/", tags=["portals"], response_model=List[
-    schemas.user_portal.UserPortalBase
+    schemas.user_portal_and_source.UserPortalBase
 
 ])
 def get_portals_users(
@@ -31,7 +38,7 @@ def get_portals_users(
     return crud.user_portal.get_and_create_user_portals(db, current_user,)
 
 
-@router.get("/me/portals/{portal_slug}", tags=["portals"], response_model=schemas.user_portal.UserPortalFull)
+@router.get("/me/portals/{portal_slug}", tags=["portals"], response_model=schemas.user_portal_and_source.UserPortalFull)
 def get_my_portal(
         portal_slug: str,
         db: Session = Depends(deps.get_db),
@@ -41,10 +48,10 @@ def get_my_portal(
     return crud.user_portal.get_or_create_user_portal(db, current_user, portal_slug=portal_slug)
 
 
-@router.put("/me/portals/{user_portal_id}", tags=["portals"], response_model=schemas.user_portal.UserPortalFull)
+@router.put("/me/portals/{user_portal_id}", tags=["portals"], response_model=schemas.user_portal_and_source.UserPortalFull)
 def update_my_portal(
         user_portal_id: int|str,
-        user_portal_in: schemas.user_portal.UserPortalUpdate,
+        user_portal_in: schemas.user_portal_and_source.UserPortalUpdate,
         db: Session = Depends(deps.get_db),
         current_user: models.User = Depends(deps.get_current_active_user),
 
