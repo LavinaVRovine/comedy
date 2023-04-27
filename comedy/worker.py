@@ -2,7 +2,7 @@
 
 from app.core.celery_app import celery_app
 from app.core.config import settings
-from content_scrapers.content_controller import ContentController
+from content_scrapers.content_controller import ContentBridge
 # TODO: ehm how can i specify that the name is app.worker?
 @celery_app.task(acks_late=True, )
 def test_celery(word: str) -> str:
@@ -18,7 +18,7 @@ def refresh_source(id: int):
 
     s = source.get(db=db, id=id)
 
-    c = ContentController(content_source_to_refresh=s)
+    c = ContentBridge(content_source_to_refresh=s)
     new_thingis = c.refresh(db=db)
     return True
 

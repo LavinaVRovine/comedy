@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import Content, YoutubeVideo, NinegagPost
+from app.models import Content, YoutubeVideo, NinegagPhoto, NinegagAnimated
 from app.models.user_content import UserPortal, UserSource, UserContent
 from sqlalchemy import select
 from app.db.session import SessionLocalApp, engine
@@ -16,11 +16,11 @@ def super_dumb_recommend(db: Session = None, time: float = None):
     :return:
     """
     with SessionLocalApp() as session:
-        loader_opt = selectin_polymorphic(Content,[YoutubeVideo, NinegagPost])
+        loader_opt = selectin_polymorphic(Content, [YoutubeVideo, NinegagPhoto, NinegagAnimated])
         # noinspection PyComparisonWithNone
-        statement = select(Content).outerjoin(UserContent).where(UserContent.seen == None).options(loader_opt)
+        statement = select(Content).outerjoin(UserContent).where(UserContent.seen == None).order_by(Content.published_at).limit(20).options(loader_opt)
         lala = session.scalars(statement).all()
-        return lala[:2]
+        return lala#[:10]
 
 
 if __name__ == '__main__':

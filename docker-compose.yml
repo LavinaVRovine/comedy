@@ -10,20 +10,20 @@ services:
       - '5432:5432'
     volumes:
       - db:/var/lib/postgresql/data
-  queue:
-    # image: rabbitmq:3
-    # Using the below image instead is required to enable the "Broker" tab in the flower UI:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+#  queue:
+#    # image: rabbitmq:3
+#    # Using the below image instead is required to enable the "Broker" tab in the flower UI:
+#    image: rabbitmq:3-management
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
   redis:
     image: redis:6-alpine
     ports:
       - "6379:6379"
     #
     # You also have to change the flower command
-  # todo pridej command atp
+  # todo pridej command atp - z comedy/comedy je to celery -A worker flower
 #  flower:
 #    image: mher/flower
 #    command:
