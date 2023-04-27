@@ -1,8 +1,5 @@
 from fastapi import APIRouter, Depends
-# noinspection PyUnresolvedReferences
-# from confluent_kafka.error import KafkaError, KafkaException
-#
-# from kafka_my.get_x import get_n_thingis
+
 from app.api.dependencies import get_db
 from sqlalchemy.orm import Session
 from app.api import dependencies as deps

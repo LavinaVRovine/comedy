@@ -1,12 +1,10 @@
 import abc
-import dataclasses
-
+from content_scrapers.schemas.common import Image
 from app.db.base_class import Base
 from .content_source import ContentSource
-from sqlalchemy import Column, INTEGER, String, DateTime, JSON, ForeignKey, Table, Float
+from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime
-from sqlalchemy.ext.hybrid import hybrid_property
 
 
 content_topic = Table(
@@ -28,7 +26,6 @@ class Content(Base):
 
     topics: Mapped[list["Content"] | None] = relationship("Topic", back_populates="contents", secondary=content_topic)
 
-
     __mapper_args__ = {'polymorphic_on': content_type}
 
     @property
@@ -42,24 +39,18 @@ class Content(Base):
         raise NotImplementedError
 
 
-@dataclasses.dataclass
-class Thumbnails:
-    url: str
-    width: int
-    height: int
-
-
 class YoutubeVideo(Content):
     __mapper_args__ = {'polymorphic_identity': 'youtube_video'}
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
     duration: Mapped[float] = mapped_column(Float)
 
-    def get_thumbnails(self, size:str|None = None) -> Thumbnails:
+    @property
+    def get_thumbnails(self, size: str | None = None) -> Image:
         if not size:
             thumbnail = self.thumbnails.get("default", {})
             if thumbnail:
-                return Thumbnails(**thumbnail)
+                return Image(**thumbnail)
 
         raise NotImplementedError
         return self.thumbnails.get("default", {})
@@ -68,14 +59,43 @@ class YoutubeVideo(Content):
     def get_duration(self):
         return self.duration
 
+
 class Topic(Base):
     id = Column(INTEGER, primary_key=True)
     wiki_link: Mapped[str] = mapped_column(String(100), unique=True, )
     contents: Mapped[list["Content"] | None] = relationship("Content", back_populates="topics", secondary=content_topic)
 
-
-class NinegagPost(Content):
-    __tablename__ = "ninegag_post"
-    __mapper_args__ = {'polymorphic_identity': 'ninegag_post'}
+class NinegagThumbnailsMixin:
+    @property
+    def get_thumbnails(self, size: str | None = None) -> Image:
+        if not size:
+            thumbnail = self.thumbnails.get("image700", {})
+            if thumbnail:
+                return Image(**thumbnail)
+        print()
+# did not figure out how to make a ninegag post and then subclass
+class NinegagAnimated(NinegagThumbnailsMixin,Content, ):
+    __tablename__ = "ninegag_animated"
+    __mapper_args__ = {
+        "polymorphic_identity": "ninegag_animated",
+        #"concrete": True,
+    }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
-    thumbnailz = Column(INTEGER)
+    thumbnails = Column(JSON)
+    duration: Mapped[float] = mapped_column(Float, nullable=True)
+    @property
+    def get_duration(self):
+        return self.duration if self.duration else 6.
+
+class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
+    __tablename__ = "ninegag_photo"
+    __mapper_args__ = {
+        "polymorphic_identity": "ninegag_photo",
+        #"concrete": True,
+    }
+    id = Column(None, ForeignKey('content.id'), primary_key=True)
+    thumbnails = Column(JSON)
+
+    @property
+    def get_duration(self):
+        return 6.

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Final
 import os
@@ -27,3 +28,7 @@ CONFLUENT_SCHEMA_REGISTRY_CONFIG = {
 
 ENV = os.getenv("ENV", "dev")
 DEBUGGING = ENV == "dev"
+
+
+logging.basicConfig(level=logging.DEBUG if DEBUGGING else logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')

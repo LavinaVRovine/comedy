@@ -1,12 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
+from content_scrapers.schemas.common import Image
 
+class PortalBase(BaseModel):
+    name: str
 
-class Portal(BaseModel):
+class Portal(PortalBase):
     id: int
     name: str
-    get_thumbnail: str
+    get_thumbnails: str
     get_url_slug: str
     class Config:
         orm_mode = True
@@ -17,8 +20,9 @@ class Content(BaseModel):
     title: str
     description: Optional[str]
     published_at: datetime
-    thumbnails: Optional[dict]
+    #thumbnails: Image | None = Field(alias="get_thumbnails")
     get_duration: float|None
+    get_thumbnails: Image | None
     # source: Source
     class Config:
         orm_mode = True

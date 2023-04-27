@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi import APIRouter
 from app.api.routers import contents, login, users, portals, sources, utils
+from app.api.routers.user_specific import user_portals, user_sources
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 router = APIRouter(prefix="/contents", responses={404: {"description": "Not found"}})
 
@@ -13,7 +15,7 @@ origins = [
 
 
 app = FastAPI(title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json")
-
+app.mount("/static", StaticFiles(directory="media"), name='static')
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
@@ -37,7 +39,8 @@ api_router.include_router(contents.router, prefix="/contents", tags=["users"])
 api_router.include_router(portals.router, prefix="/portals", tags=["portals"])
 api_router.include_router(sources.router, prefix="/sources", tags=["sources"])
 api_router.include_router(utils.router, prefix="/utils", tags=["utils"])
-
+api_router.include_router(user_sources.router, prefix="/user-sources", tags=["user_sources"])
+api_router.include_router(user_portals.router, prefix="/user-portals", tags=["user_portals"])
 app.include_router(api_router)
 
 
