@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Dict, Optional, Union
 
 from sqlalchemy.orm import Session, aliased
@@ -52,9 +53,13 @@ class CRUDUserSource(CRUDBase[UserSource, UserSourceSchema, UserSourceUpdate]):
                             s not in user_sources]
         if new_user_sources:
             db.add_all(new_user_sources)
-            db.commit()
-            db.refresh(user_portal)
 
+            #db.commit()
+
+            # db.refresh(user_portal)
+        user_portal.last_remote_sync_at = datetime.datetime.utcnow()
+        db.add(user_portal)
+        db.commit()
         return user_sources + new_user_sources
 
     def _filter_already_created_user_sources(self, sources, user_portal: models.UserPortal):

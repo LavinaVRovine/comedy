@@ -64,3 +64,16 @@ def update_my_user_portal(
                                 obj_in=user_portal_in
                                 )
     return o
+
+@router.get("/me/sync/{user_portal_id}", tags=["portals"], )
+def sync_my_user_portal(
+        user_portal_id: int,
+
+        db: Session = Depends(deps.get_db),
+        current_user: models.User = Depends(deps.get_current_active_user),
+
+):
+    user_portal = crud.user_portal.get(db, id=user_portal_id)
+    crud.user_portal._refresh_user_portal_sources(db, user=current_user,user_portal=user_portal)
+
+    return True

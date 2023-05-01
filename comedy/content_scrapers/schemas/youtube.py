@@ -69,6 +69,6 @@ class YoutubeSubscriptionBase(YoutubeBase):
 class YoutubeUploadsPlaylist(YoutubeSubscriptionBase):
     # FIXME: ok ja nicmene pak vydavam subscription za yt playlist coz je meeeh
     playlist_id: str
-    id: str = Field(alias="source_id") # todo rename in model to be target system id
+    id: str = Field(alias="target_system_id")
     class Config:
         allow_population_by_field_name = True

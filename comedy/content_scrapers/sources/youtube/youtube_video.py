@@ -22,7 +22,7 @@ class YoutubeVideoSource(ContentSource):
         super(YoutubeVideoSource, self).__init__(source)
         self._connector = YoutubePortalConnector()
         self.service = self.connector.service
-        self.playlist_id = self.source.source_id
+        self.playlist_id = self.source.target_system_id
         self.topics: list[dict] = []
         self.topics_as_db_instances: list[Topic] = []
 

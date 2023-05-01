@@ -26,11 +26,11 @@ class UserPortal(Base):
 
     @property
     def syncable(self):
-        if self.portal.remote_syncable:
+        if self.portal.syncable:
             if not self.last_remote_sync_at:
                 # TODO :Refactor
                 return True
-            datetime.datetime.utcnow() - self.last_remote_sync_at
+            return (datetime.datetime.utcnow() - self.last_remote_sync_at) > datetime.timedelta(days=1)
 
         return False
 

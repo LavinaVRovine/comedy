@@ -11,6 +11,7 @@ class Portal(PortalBase):
     name: str
     get_thumbnails: str
     get_url_slug: str
+    syncable: bool
     class Config:
         orm_mode = True
 

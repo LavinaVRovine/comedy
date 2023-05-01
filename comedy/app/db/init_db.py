@@ -22,7 +22,7 @@ def init_db(db: Session, engine=None) -> None:
     base.Base.metadata.create_all(bind=engine)
 
     p = Portal(
-        id=1, name="Youtube", url="whatever", img_path="youtube.png", remote_syncable=True
+        id=1, name="Youtube", url="whatever", img_path="youtube.png", syncable=True
     )
 
     p2 = Portal(
@@ -32,7 +32,7 @@ def init_db(db: Session, engine=None) -> None:
     db.add(p)
     db.add(p2)
 
-    top_source = crud.source.create(db, obj_in=SourceCreate(source_id="top", source_name="top", portal_id=p2.id, recommended=True))
+    top_source = crud.source.create(db, obj_in=SourceCreate(target_system_id="top", source_name="top", portal_id=p2.id, recommended=True))
 
     ContentBridge(content_source_to_refresh=top_source).refresh(db)
 

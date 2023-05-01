@@ -4,10 +4,10 @@ from pydantic import BaseModel
 class ImageNoSize(BaseModel):
     url: str
 
+
 class Image(ImageNoSize):
     width: int
     height: int
-
 
     class Config:
         use_enum_values = True

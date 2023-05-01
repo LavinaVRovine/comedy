@@ -1,5 +1,7 @@
 from content_scrapers.schemas.common import Image, ImageNoSize
 from pydantic.error_wrappers import ValidationError
+
+
 class YoutubeMixin:
     @property
     def get_thumbnails(self, size: str | None = None) -> Image | ImageNoSize:
