@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from .content import Content
 from content_scrapers.schemas.common import ImageNoSize
 
 
@@ -13,7 +12,7 @@ class SourceUpdate(SourceSimplified):
 
 class SourceBase(SourceSimplified):
     id: int
-    source_id: str | None
+    target_system_id: str | None
     source_name: str
     recommended: bool | None
 
@@ -23,7 +22,7 @@ class SourceBase(SourceSimplified):
 
 class SourceCreate(SourceBase):
     id: int = None
-    source_id: str
+    target_system_id: str
     source_name: str
     portal_id: int
 

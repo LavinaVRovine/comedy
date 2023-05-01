@@ -27,7 +27,7 @@ class Portal(Base):
     name: Mapped[str] = mapped_column(String(50))
     slug: Mapped[str] = mapped_column(String(50), default=sluggify_name, onupdate=sluggify_name)
     url: Mapped[str] = mapped_column(String(100), unique=True)
-    remote_syncable: Mapped[bool] = mapped_column(Boolean, default=False, )
+    syncable: Mapped[bool] = mapped_column(Boolean, default=False, )
     img_path: Mapped[str] = mapped_column(String(100), unique=True, nullable=True)
     sources: Mapped[list["ContentSource"]] = relationship(
         #back_populates="portal"
@@ -57,7 +57,7 @@ class ContentSource(Base):
     Could be a channel, subredit, nothing
     """
     id = mapped_column(INTEGER, primary_key=True)
-    source_id: Mapped[str] = mapped_column(String(50), nullable=False, )
+    target_system_id: Mapped[str] = mapped_column(String(50), nullable=False, )
     source_name: Mapped[str] = mapped_column(String(100))
     source_type: Mapped[str] = mapped_column(String(32), nullable=True)
     contents: Mapped[list["Content"]] = relationship("Content", back_populates="source")
@@ -66,13 +66,13 @@ class ContentSource(Base):
     portal_id = mapped_column(INTEGER, ForeignKey("portal.id"))
     portal: Mapped[Portal] = relationship(back_populates="sources")
     #thumbnails = Column(JSON, nullable=True)
-    __table_args__ = (UniqueConstraint("portal_id", "source_id", name="_portal_source_name_uc"), )
+    __table_args__ = (UniqueConstraint("portal_id", "target_system_id", name="_portal_source_name_uc"), )
 
     __mapper_args__ = {'polymorphic_on': source_type, "polymorphic_identity": "source"}
     # users: Mapped[list["User"]] = relationship(secondary="user_source", back_populates="followed_sources")
 
     def __repr__(self):
-        return f"<Content Source>: {self.source_id}"
+        return f"<Content Source>: {self.target_system_id}"
 
     @property
     def get_thumbnails(self, size: str | None = None) -> ImageNoSize | None:

@@ -64,7 +64,7 @@ class SourcesType(str, Enum):
     other = "other"
 
 @router.get("/me/{portal_slug}", tags=["sources"], response_model=list[
-    schemas.user_source.UserSourceFull | schemas.user_source.UserSourceFake ])
+    schemas.user_source.UserSourceFull | schemas.user_source.UserSourceFake])
 def get_my_portal_sources(
         portal_slug: str,
         source_type: Annotated[SourcesType|None, Query()] = None,

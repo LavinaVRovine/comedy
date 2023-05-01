@@ -2,7 +2,7 @@ import abc
 from content_scrapers.schemas.common import Image
 from app.db.base_class import Base
 from .content_source import ContentSource
-from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float
+from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime
 
@@ -27,6 +27,7 @@ class Content(Base):
     topics: Mapped[list["Content"] | None] = relationship("Topic", back_populates="contents", secondary=content_topic)
 
     __mapper_args__ = {'polymorphic_on': content_type}
+    __table_args__ = (UniqueConstraint("target_system_id", "source_id", name="_target_system_id_source_name_uc"),)
 
     @property
     @abc.abstractmethod

@@ -18,6 +18,7 @@ logger = logging.getLogger()
 
 
 class NinegagSource(ContentSource):
+    # FIXME. JOJO, tohle je ono
     INSTANCE_DB_MODEL = NinegagPhoto or NinegagAnimated
     SCHEMA_EXCLUDE = {"type": True}
     API_URL = "https://9gag.com/v1"
@@ -58,7 +59,8 @@ class NinegagTagSource(NinegagSource):
         yield from response_json["posts"]
         next_page_cursor = response_json.get("nextCursor", None)
         # TODO: might detect on creation date?
-        if next_page_cursor and nth_iter < 1:
+        #  ALSO iam not certain it even returns different results with that cursor thingy
+        if next_page_cursor and nth_iter < 0:
             yield from self._get_new_posts(next_page_cursor, nth_iter + 1)
 
     def save(self, db: Session, ):
@@ -141,19 +143,19 @@ class NinegagGroupSource(NinegagTagSource):
             # FIXME: fakt me ty portaly serou s tema IDckama a chybejicim mappingem atp
             sources.append(
                 NinegagContentSource(
-                    source_id=t.url.replace("/tag/", ""), source_name=t.key,
+                    target_system_id=t.url.replace("/tag/", ""), source_name=t.key,
                     portal_id=2,
 
                 )
             )
-        source_ids = [s.source_id for s in sources]
-        statement = select(ContentSource.id).where(ContentSource.source_id.in_(
+        source_ids = [s.target_system_id for s in sources]
+        statement = select(ContentSource.id).where(ContentSource.target_system_id.in_(
             source_ids
         ))
         existing_source_ids = db.scalars(
             statement
         ).all()
-        sources_to_create = [s for s in sources if s.source_id not in existing_source_ids]
+        sources_to_create = [s for s in sources if s.target_system_id not in existing_source_ids]
         if sources_to_create:
             db.add_all(
                 sources_to_create

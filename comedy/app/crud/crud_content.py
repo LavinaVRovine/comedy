@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from app.models import Content
 
 
-def get_latest_contents(db: Session):
-    return db.query(Content).order_by(Content.published_at.desc()).limit(5).all()
+def get_latest_contents(db: Session, skip: int = 0, limit: int = 5,):
+    return db.query(Content).order_by(Content.published_at.desc()).offset(skip).limit(limit).all()
 
 
 

@@ -74,17 +74,22 @@ class ContentSource(ABC):
         )
 
     def _save_new_content_instances_and_update(self, db: Session):
+        from app import models
         db_instances = [self._cast_to_db_instance(v) for v in self.content.values()]
-        statement = select(ContentSourceModel).where(ContentSourceModel.source_id.in_(
-            [s.source_id for s in db_instances]
+        # FIXME: no ja se dotazuji na photo a pritom jaksi mam i animated ze....
+        # a taky bych se mohl podivat proc se to vlastne duplikuje
+        statement = select(models.Content).where(models.Content.target_system_id.in_(
+            [s.target_system_id for s in db_instances]
         ))
 
         existing_sources = db.execute(
             statement
         ).scalars().all()
 
-        existing_ids = [x.source_id for x in existing_sources]
-        new_sources = [x for x in db_instances if x.source_id not in existing_ids]
+        existing_ids = [x.target_system_id for x in existing_sources]
+        new_sources = [x for x in db_instances if x.target_system_id not in existing_ids]
+
+
         if new_sources:
             db.add_all(new_sources)
             db.commit()

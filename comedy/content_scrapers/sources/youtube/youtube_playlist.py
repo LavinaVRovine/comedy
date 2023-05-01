@@ -45,7 +45,7 @@ class YoutubeUploadedPlaylist(ContentSource):
 
     def _prepare_db_instance(self, obj: YoutubeUploadsPlaylist) -> dict:
         return {
-            "source_id": obj.id, "source_name": obj.snippet.title,
+            "target_system_id": obj.id, "source_name": obj.snippet.title,
             "description": obj.snippet.description,
             "thumbnails": {k: v.dict() for k, v in obj.snippet.thumbnails.items()},
             "portal": self.portal
@@ -66,7 +66,7 @@ class YoutubeUploadedPlaylist(ContentSource):
         existing_sources = db.execute(
             statement
         ).scalars().all()
-        existing_ids = [x.source_id for x in existing_sources]
+        existing_ids = [x.target_system_id for x in existing_sources]
         new_sources = [self._cast_to_db_instance(x) for x in self.content if
                        x.id not in existing_ids]
         if new_sources:
