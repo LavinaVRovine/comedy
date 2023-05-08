@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@vue/cli": "^5.0.8",
-    "vue-observe-visibility": "^1.0.0",
-    "vue3-observe-visibility2": "^0.0.3"
-  }
-}
