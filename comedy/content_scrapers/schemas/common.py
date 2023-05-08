@@ -13,9 +13,10 @@ class Image(ImageNoSize):
         use_enum_values = True
         orm_mode = True
 
-
-class Tag(BaseModel):
+class Topic(BaseModel):
     key: str
     url: str
+class Tag(Topic):
+
     description: str | None
     isSensitive: int | None

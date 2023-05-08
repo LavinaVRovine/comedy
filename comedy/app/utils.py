@@ -9,7 +9,8 @@ from jose import jwt
 
 from app.core.config import settings
 
-
+def parse_key_from_url(url: str):
+    return url.rsplit("/", 1)[-1].lower()
 def send_email(
     email_to: str,
     subject_template: str = "",

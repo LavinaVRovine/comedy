@@ -73,7 +73,6 @@ class ContentBridge:
             return
 
         self.content_refresher.save(db)
-        print(db)
         return
 
 

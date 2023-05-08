@@ -12,18 +12,19 @@ from config import DEBUGGING
 from content_scrapers.schemas.youtube import YoutubeVideoBase
 from content_scrapers.sources.common import ContentSource
 from content_scrapers.sources.connectors.youtube_connector import MAX_RESULTS, YoutubePortalConnector
-
+from app.utils import parse_key_from_url
+from content_scrapers.schemas.common import Topic
 
 class YoutubeVideoSource(ContentSource):
     INSTANCE_DB_MODEL = YoutubeVideo
-    SCHEMA_EXCLUDE = {"kind": True}
+    SCHEMA_EXCLUDE = {"kind": True, "topic_details": True}
 
     def __init__(self, source):
         super(YoutubeVideoSource, self).__init__(source)
         self._connector = YoutubePortalConnector()
         self.service = self.connector.service
         self.playlist_id = self.source.target_system_id
-        self.topics: list[dict] = []
+
         self.topics_as_db_instances: list[Topic] = []
 
     def _fetch_playlist_items_page(self, next_page_token=None, maxResults: int = MAX_RESULTS):
@@ -87,17 +88,7 @@ class YoutubeVideoSource(ContentSource):
             to_add_dict[video_details["id"]] = to_add_dict[video_details["id"]] | {k:v for k,v in video_details.items() if k in ("contentDetails", "topicDetails")}
         return to_add_dict
 
-    def _save_return_topics(self, db: Session) -> None:
-        if not self.topics:
-            return
-        statement = select(Topic).where(Topic.wiki_link.in_(self.topics))
-        topics = db.scalars(statement).all()
-        existing_topic_names = [t.wiki_link for t in topics]
-        topics_to_be_created = [Topic(wiki_link=t) for t in self.topics if t not in existing_topic_names]
-        db.add_all(topics_to_be_created)
-        db.commit()
-        self.topics_as_db_instances = list(topics) + topics_to_be_created
-        return
+
 
     def _prepare_db_instance(self, obj) -> dict:
         as_dict = obj.dict(by_alias=False, exclude=self.SCHEMA_EXCLUDE)
@@ -110,12 +101,15 @@ class YoutubeVideoSource(ContentSource):
     def _save_new_content_instances_and_update(self, db: Session, ):
         videos = []
         for k, v in self.content.items():
-            this_vid_topics = filter(lambda x: x.wiki_link in [t for t in v["topicDetails"].get("topicCategories", [])],
-                                     self.topics_as_db_instances)
-
             vid = self._cast_to_db_instance(v)
-            vid.topics = list(this_vid_topics)
-            videos.append(vid)
+            try:
+                this_vid_topics = filter(lambda x: x.url in [t for t in v.topic_details.topic_categories],
+                                     self.topics_as_db_instances)
+                vid.topics = list(this_vid_topics)
+            except AttributeError:
+                pass
+            finally:
+                videos.append(vid)
 
         try:
             db.add_all(videos)
@@ -136,16 +130,22 @@ class YoutubeVideoSource(ContentSource):
                 [m.published_at for m in to_add])  # datetime.utcnow().astimezone(tz=pytz.UTC)#.replace(tzinfo=None)
 
     def save(self, db: Session, ):
-        self._save_return_topics(db)
+        if not self.content:
+            self.get_content()
+        self._save_set_topics(db)
         super(YoutubeVideoSource, self).save(db)
 
     def get_content(self) -> None:
         response_dict: dict = self._get_new_videos_since()
 
         for k, v in response_dict.items():
-            topics = v.get("topicDetails", {}).get("topicCategories", [])
+            yt_video = YoutubeVideoBase.parse_obj(v)
+            self.content[k] = yt_video
+            try:
+                for t in yt_video.topic_details.topic_categories:
 
-            for t in topics:
-                if t in self.topics:
-                    self.topics.append(t)
-            self.content[k] = YoutubeVideoBase.parse_obj(v)
+                    t = Topic(key=parse_key_from_url(t), url=t)
+                    if t not in self.topics:
+                        self.topics.append(t)
+            except AttributeError:
+                pass

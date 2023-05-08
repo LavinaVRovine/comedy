@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.models.content_source import ContentSource as ContentSourceModel
+from app import models
 from content_scrapers.sources.connectors.common import Connector
 import datetime
-
+from content_scrapers.schemas.common import Tag, Topic
 
 class ContentSource(ABC):
     INSTANCE_DB_MODEL = None
@@ -16,6 +17,7 @@ class ContentSource(ABC):
         self.raw_content = None
         self.content: dict[str, dict] = {}
         self._connector: Connector = None
+        self.topics: list[Tag|Topic] = []
 
     @property
     def connector(self):
@@ -26,6 +28,22 @@ class ContentSource(ABC):
     @abstractmethod
     def get_content(self):
         raise NotImplementedError
+
+    def _save_set_topics(self, db: Session) -> None:
+        if not self.topics:
+            return
+        statement = select(models.Topic).where(models.Topic.key.in_([t.key for t in self.topics]))
+        topics = db.scalars(statement).all()
+
+        existing_topic_names = [t.key for t in topics]
+
+        topics_to_be_created = [
+            models.Topic(key=t.key, url=t.url, ) for t in
+            self.topics if t.key not in existing_topic_names]
+        db.add_all(topics_to_be_created)
+        db.commit()
+        self.topics_as_db_instances = list(topics) + topics_to_be_created
+        return
 
     @staticmethod
     @abstractmethod
