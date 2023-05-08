@@ -22,7 +22,7 @@ class Content(BaseModel):
     description: Optional[str]
     published_at: datetime
     #thumbnails: Image | None = Field(alias="get_thumbnails")
-    get_duration: float|None
+    duration: float
     get_thumbnails: Image | None
     # source: Source
     class Config:

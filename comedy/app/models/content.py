@@ -5,13 +5,13 @@ from .content_source import ContentSource
 from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime
-
+from .content_source import Portal
 
 content_topic = Table(
     "content_topic",
     Base.metadata,
     Column("content_id", ForeignKey("content.id"), primary_key=True),
-    Column("topic_id", ForeignKey("topic.id"), primary_key=True),
+    Column("topic_key", ForeignKey("topic.key"), primary_key=True),
 )
 class Content(Base):
     id = Column(INTEGER, primary_key=True)
@@ -34,10 +34,6 @@ class Content(Base):
     def get_thumbnails(self):
         raise NotImplementedError
 
-    @property
-    @abc.abstractmethod
-    def get_duration(self):
-        raise NotImplementedError
 
 
 class YoutubeVideo(Content):
@@ -56,15 +52,19 @@ class YoutubeVideo(Content):
         raise NotImplementedError
         return self.thumbnails.get("default", {})
 
-    @property
-    def get_duration(self):
-        return self.duration
 
 
 class Topic(Base):
-    id = Column(INTEGER, primary_key=True)
-    wiki_link: Mapped[str] = mapped_column(String(100), unique=True, )
+    __tablename__ = "topic"
+    #id = Column(INTEGER, primary_key=True)
+    key = Column(String, primary_key=True)
     contents: Mapped[list["Content"] | None] = relationship("Content", back_populates="topics", secondary=content_topic)
+    #portal: Mapped["Portal"] = relationship()
+    #portal_id = Column(INTEGER, ForeignKey("portal.id"))
+    info = Column(JSON, nullable=True)
+    url: Mapped[str] = mapped_column(String(100), nullable=True, )
+    #__mapper_args__ = {'polymorphic_on': portal_id}
+
 
 class NinegagThumbnailsMixin:
     @property
@@ -83,10 +83,8 @@ class NinegagAnimated(NinegagThumbnailsMixin,Content, ):
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
-    duration: Mapped[float] = mapped_column(Float, nullable=True)
-    @property
-    def get_duration(self):
-        return self.duration if self.duration else 6.
+    duration: Mapped[float] = mapped_column(Float, nullable=True, default=6.)
+
 
 class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
     __tablename__ = "ninegag_photo"
@@ -96,7 +94,5 @@ class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
+    duration: Mapped[float] = mapped_column(Float, nullable=True, default=6.)
 
-    @property
-    def get_duration(self):
-        return 6.

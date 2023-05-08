@@ -18,13 +18,23 @@ def super_dumb_recommend(db: Session = None, time: float = None):
     with SessionLocalApp() as session:
         loader_opt = selectin_polymorphic(Content, [YoutubeVideo, NinegagPhoto, NinegagAnimated])
         # noinspection PyComparisonWithNone
-        statement = select(Content).outerjoin(UserContent).where(UserContent.seen == None).order_by(Content.published_at).limit(20).options(loader_opt)
+        statement = select(Content).outerjoin(UserContent).where(UserContent.seen == None).order_by(Content.published_at).limit(200).options(loader_opt)
         lala = session.scalars(statement).all()
-        return lala#[:10]
+
+        returned = []
+        total_time = 0
+        for l in lala:
+            if l.duration > time:
+                continue
+            if total_time + l.duration > time:
+                return returned
+            returned.append(l)
+            total_time += l.duration
+        return lala
 
 
 if __name__ == '__main__':
-    yt = super_dumb_recommend()[0]
+    yt = super_dumb_recommend(time=60)[0]
     print()
 
 

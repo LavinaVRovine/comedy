@@ -16,9 +16,15 @@ def get_latest_contents(db: Session = Depends(get_db), skip: int = 0, limit: int
     return crud.get_latest_contents(db, skip=skip, limit=limit)
 
 @router.get("/me/recommend", tags=["recommendations"], response_model=List[schemas.content.Content])
-def get_recommended_content(db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_active_user),):
+def get_recommended_content(
+        max_duration: int,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(deps.get_current_active_user),
+
+):
+    max_duration_sec = max_duration * 60
     from recomentations.tmp import super_dumb_recommend
-    recommended_content = super_dumb_recommend()
+    recommended_content = super_dumb_recommend(time=max_duration_sec)
     return recommended_content
 
 

@@ -1,7 +1,7 @@
 from requests import Session as WebSession
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from typing import Dict
+from typing import Dict, cast
 from app import models
 from content_scrapers.sources.common import ContentSource
 from content_scrapers.schemas.common import Tag
@@ -11,7 +11,7 @@ from content_scrapers.sources.connectors.web_connector import WebConnector
 from app.models import NinegagPhoto, NinegagAnimated
 import datetime
 import logging
-
+from app.utils import parse_key_from_url
 
 
 logger = logging.getLogger()
@@ -20,7 +20,7 @@ logger = logging.getLogger()
 class NinegagSource(ContentSource):
     # FIXME. JOJO, tohle je ono
     INSTANCE_DB_MODEL = NinegagPhoto or NinegagAnimated
-    SCHEMA_EXCLUDE = {"type": True}
+    SCHEMA_EXCLUDE = {"type": True, "tags": True}
     API_URL = "https://9gag.com/v1"
     @staticmethod
     def _get_my_db_portal(db: Session, ) -> models.Portal:
@@ -38,8 +38,8 @@ class NinegagTagSource(NinegagSource):
         self.tag: Tag | None = None
         self.content: Dict[str, NinegagBase] | None = {}
         self._connector: WebSession = WebConnector()
-        
-    # TODO: will see how the user agent works etc
+        self.topics = cast(Tag, self.topics)
+
     def _fetch_new_posts(self, next_cursor: str | None = None, ) -> dict:
         if not next_cursor:
             url = self.tag_url
@@ -63,12 +63,21 @@ class NinegagTagSource(NinegagSource):
         if next_page_cursor and nth_iter < 0:
             yield from self._get_new_posts(next_page_cursor, nth_iter + 1)
 
+
     def save(self, db: Session, ):
         super(NinegagTagSource, self).save(db)
         if not self.content:
             raise ValueError
-
+        self._save_set_topics(db)
         self._save_new_content_instances_and_update(db)
+
+    def _prepare_db_instance(self, obj) -> dict:
+        parsed = super(NinegagTagSource, self)._prepare_db_instance(obj)
+        try:
+            parsed["duration"] = obj.get_duration()
+        except AttributeError:
+            pass
+        return parsed
 
     def _cast_to_db_instance(self, obj: NinegagBase):
         as_dict = self._prepare_db_instance(obj)
@@ -98,20 +107,25 @@ class NinegagTagSource(NinegagSource):
                 annotation_tags = post["annotationTags"]
                 comment=post["comment"]
                 creator=post["creator"]
-                tags = post["tags"]
+
             try:
                 post_id = post["id"]
                 type_: str = post["type"].lower()
                 if type_.lower() == "photo":
                     self.content[post_id] = PhotoSchema.parse_obj(post)
                 elif type_.lower() == "animated":
-                    self.content[post_id] = AnimatedSchema.parse_obj(post)
+                    post_parsed = AnimatedSchema.parse_obj(post)
+                    self.content[post_id] = post_parsed
                 elif type_.lower() == "article":
                     logger.debug(f"Skipping article: {post}")
                     continue
                 else:
                     logger.warning(f"Unknown 9 gag type for {post}")
                     continue
+                for t in self.content[post_id].tags:
+                    t.key = parse_key_from_url(t.url)
+                    if t not in self.topics:
+                        self.topics.append(t)
             except ValueError as e:
                 print(e)
                 continue

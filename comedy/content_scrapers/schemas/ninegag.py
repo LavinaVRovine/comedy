@@ -3,7 +3,7 @@ from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-from content_scrapers.schemas.common import Image
+from content_scrapers.schemas.common import Image, Tag
 
 
 class NinegagType(str, Enum):
@@ -18,6 +18,7 @@ class NinegagBase(BaseModel):
     type: NinegagType
     description: str | None
     published_at: datetime
+    tags: list[Tag] | None
 
     class Config:
         allow_population_by_field_name = True
@@ -36,6 +37,9 @@ class AnimatedImageSize(str, Enum):
     image460 = "image460"
     imageFbThumbnail = "imageFbThumbnail"
     image460sv = "image460sv"
+    av1Url = "av1Url"
+    vp9Url = "vp9Url"
+    h265Url = "h265Url"
 
 
 class NinegagPhoto(NinegagBase):
@@ -44,7 +48,17 @@ class NinegagPhoto(NinegagBase):
 
 class AnimatedImage(Image):
     duration: int
+    hasAudio: int | None
 
-
+from typing import Union, Optional
 class NinegagAnimated(NinegagPhoto):
-    images: Dict[AnimatedImageSize, AnimatedImage | Image] = Field(alias="thumbnails")
+    images: Dict[AnimatedImageSize | str, AnimatedImage | Image] = Field(alias="thumbnails")
+
+
+    def get_duration(self) -> int | None:
+        for i in self.images.values():
+            try:
+                return i.duration
+            except AttributeError:
+                pass
+        return

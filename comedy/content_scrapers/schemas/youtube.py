@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 from enum import Enum
-from .common import Image, ImageNoSize
+from .common import Image, ImageNoSize, Topic
 
 
 class ImageSize(str, Enum):
@@ -24,7 +24,9 @@ class ContentDetails(BaseModel):
 
 
 class TopicDetails(BaseModel):
-    topic_categories: list[str] = Field(alias="topicDetails")
+    topic_categories: list[str] = Field(alias="topicCategories")
+    class Config:
+        allow_population_by_field_name = False
 
 class YoutubeBase(BaseModel):
     id: str = Field(alias="target_system_id")
@@ -38,9 +40,12 @@ class YoutubeVideoBase(YoutubeBase):
     # url: str
 
     description: str | None
-
+    topic_details: TopicDetails | None = Field(alias="topicDetails", )
+    #topicDetails: TopicDetails | None = Field(alias="topic_details")
     class Config:
         allow_population_by_field_name = True
+
+
 
 
 class ChannelId(BaseModel):
