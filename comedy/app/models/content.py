@@ -14,6 +14,7 @@ content_topic = Table(
     Column("topic_key", ForeignKey("topic.key"), primary_key=True),
 )
 class Content(Base):
+
     id = Column(INTEGER, primary_key=True)
     target_system_id = mapped_column(String(100), primary_key=False,)
     title: Mapped[str]  # = Column(String(100))
@@ -34,9 +35,16 @@ class Content(Base):
     def get_thumbnails(self):
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def remote_link(self):
+        return f"{self.REMOTE_LINK_PREFIX}{self.target_system_id}"
+
+
 
 
 class YoutubeVideo(Content):
+    REMOTE_LINK_PREFIX = "https://www.youtube.com/watch?v="
     __mapper_args__ = {'polymorphic_identity': 'youtube_video'}
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
@@ -53,7 +61,6 @@ class YoutubeVideo(Content):
         return self.thumbnails.get("default", {})
 
 
-
 class Topic(Base):
     __tablename__ = "topic"
     #id = Column(INTEGER, primary_key=True)
@@ -67,6 +74,7 @@ class Topic(Base):
 
 
 class NinegagThumbnailsMixin:
+    REMOTE_LINK_PREFIX = f"https://9gag.com/gag/"
     @property
     def get_thumbnails(self, size: str | None = None) -> Image:
         if not size:
@@ -74,6 +82,7 @@ class NinegagThumbnailsMixin:
             if thumbnail:
                 return Image(**thumbnail)
         print()
+
 # did not figure out how to make a ninegag post and then subclass
 class NinegagAnimated(NinegagThumbnailsMixin,Content, ):
     __tablename__ = "ninegag_animated"
@@ -83,7 +92,7 @@ class NinegagAnimated(NinegagThumbnailsMixin,Content, ):
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
-    duration: Mapped[float] = mapped_column(Float, nullable=True, default=6.)
+    duration: Mapped[float] = mapped_column(Float, nullable=False, )
 
 
 class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
@@ -94,5 +103,5 @@ class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
     thumbnails = Column(JSON)
-    duration: Mapped[float] = mapped_column(Float, nullable=True, default=6.)
+    duration: Mapped[float] = mapped_column(Float, nullable=False, default=6.)
 

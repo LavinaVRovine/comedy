@@ -70,7 +70,9 @@ class ContentSource(Base):
 
     __mapper_args__ = {'polymorphic_on': source_type, "polymorphic_identity": "source"}
     # users: Mapped[list["User"]] = relationship(secondary="user_source", back_populates="followed_sources")
-
+    @property
+    def remote_link(self) -> str:
+        return
     def __repr__(self):
         return f"<Content Source>: {self.target_system_id}"
 

@@ -18,3 +18,4 @@ celery
 flower
 redis
 isodate
+pycognito

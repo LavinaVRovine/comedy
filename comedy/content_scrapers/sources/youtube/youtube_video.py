@@ -17,7 +17,7 @@ from content_scrapers.schemas.common import Topic
 
 class YoutubeVideoSource(ContentSource):
     INSTANCE_DB_MODEL = YoutubeVideo
-    SCHEMA_EXCLUDE = {"kind": True, "topic_details": True}
+    SCHEMA_EXCLUDE = {"kind": True, "topic_details": True, }
 
     def __init__(self, source):
         super(YoutubeVideoSource, self).__init__(source)
@@ -93,9 +93,11 @@ class YoutubeVideoSource(ContentSource):
     def _prepare_db_instance(self, obj) -> dict:
         as_dict = obj.dict(by_alias=False, exclude=self.SCHEMA_EXCLUDE)
         as_dict["source"] = self.source
-        as_dict["target_system_id"] = as_dict.pop("id")
+        as_dict.pop("id")
+        as_dict["target_system_id"] = as_dict["snippet"]["resource_id"]["video_id"]
         as_dict = as_dict | as_dict.pop("snippet")
         as_dict = as_dict | as_dict.pop("content_details")
+        as_dict.pop("resource_id")
         return as_dict
 
     def _save_new_content_instances_and_update(self, db: Session, ):

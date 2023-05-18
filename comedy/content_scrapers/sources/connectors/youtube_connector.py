@@ -98,6 +98,8 @@ def credentials():
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            os.remove(token_dir_path)
+            return credentials()
             creds.refresh(Request())
         else:
 

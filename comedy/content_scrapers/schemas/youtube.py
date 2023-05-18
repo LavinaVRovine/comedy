@@ -12,13 +12,18 @@ class ImageSize(str, Enum):
     maxres = "maxres"
 
 
+class ResourceId(BaseModel):
+    video_id: str = Field(alias="videoId")
+
+
 class Snippet(BaseModel):
 
     title: str
     description: str | None
     thumbnails: dict[ImageSize, Image] = Field(alias="thumbnails")
 
-
+class VideoSnippet(Snippet):
+    resource_id: ResourceId = Field(alias="resourceId")
 class ContentDetails(BaseModel):
     duration: int
 
@@ -33,8 +38,9 @@ class YoutubeBase(BaseModel):
     kind: str
 
 class YoutubeVideoBase(YoutubeBase):
-
-    snippet: Snippet
+    # ID is just an arbitrary ID returned. Video Id is in snippet
+    id: str | None = Field(alias="target_system_id")
+    snippet: VideoSnippet
     content_details: ContentDetails = Field(alias="contentDetails")
     published_at: datetime = Field(alias="publishedAt")
     # url: str
