@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from .user import User
-from .content import Portal
+from . import Portal
 
 
 class UserPortalBase(BaseModel):

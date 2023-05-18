@@ -11,7 +11,7 @@ from content_scrapers.sources import YoutubeVideoSource, NinegagTagSource
 from content_scrapers.sources.ninegag import NinegagGroupSource
 from content_scrapers.sources.youtube.youtube_playlist import YoutubeUploadedPlaylist
 
-from app.db.session import SessionLocalApp, SessionLocalAppAsync
+from app.db.session import SessionLocalApp
 from datetime import datetime, timedelta
 from config import DEBUGGING
 logger = logging.getLogger()

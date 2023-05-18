@@ -5,7 +5,7 @@ from .content_source import ContentSource
 from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime
-from .content_source import Portal
+
 
 content_topic = Table(
     "content_topic",
@@ -13,6 +13,8 @@ content_topic = Table(
     Column("content_id", ForeignKey("content.id"), primary_key=True),
     Column("topic_key", ForeignKey("topic.key"), primary_key=True),
 )
+
+
 class Content(Base):
 
     id = Column(INTEGER, primary_key=True)
@@ -24,8 +26,8 @@ class Content(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     source: Mapped["ContentSource"] = relationship(back_populates="contents")
     source_id = Column(INTEGER, ForeignKey("source.id"))
-
-    topics: Mapped[list["Content"] | None] = relationship("Topic", back_populates="contents", secondary=content_topic)
+    statistics: Mapped[list["ContentStatistics"] | None] = relationship()
+    topics: Mapped[list["Topic"] | None] = relationship("Topic", back_populates="contents", secondary=content_topic)
 
     __mapper_args__ = {'polymorphic_on': content_type}
     __table_args__ = (UniqueConstraint("target_system_id", "source_id", name="_target_system_id_source_name_uc"),)
@@ -37,71 +39,90 @@ class Content(Base):
 
     @property
     @abc.abstractmethod
+    def get_image_content(self):
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
     def remote_link(self):
         return f"{self.REMOTE_LINK_PREFIX}{self.target_system_id}"
-
-
 
 
 class YoutubeVideo(Content):
     REMOTE_LINK_PREFIX = "https://www.youtube.com/watch?v="
     __mapper_args__ = {'polymorphic_identity': 'youtube_video'}
     id = Column(None, ForeignKey('content.id'), primary_key=True)
-    thumbnails = Column(JSON)
+    images = Column(JSON)
     duration: Mapped[float] = mapped_column(Float)
 
     @property
     def get_thumbnails(self, size: str | None = None) -> Image:
         if not size:
-            thumbnail = self.thumbnails.get("default", {})
+            thumbnail = self.images.get("default", {})
             if thumbnail:
                 return Image(**thumbnail)
 
         raise NotImplementedError
         return self.thumbnails.get("default", {})
 
+    @property
+    def get_image_content(self):
+        return self.get_thumbnails
+
 
 class Topic(Base):
     __tablename__ = "topic"
-    #id = Column(INTEGER, primary_key=True)
+
     key = Column(String, primary_key=True)
     contents: Mapped[list["Content"] | None] = relationship("Content", back_populates="topics", secondary=content_topic)
-    #portal: Mapped["Portal"] = relationship()
-    #portal_id = Column(INTEGER, ForeignKey("portal.id"))
     info = Column(JSON, nullable=True)
     url: Mapped[str] = mapped_column(String(100), nullable=True, )
-    #__mapper_args__ = {'polymorphic_on': portal_id}
 
 
 class NinegagThumbnailsMixin:
     REMOTE_LINK_PREFIX = f"https://9gag.com/gag/"
+
     @property
     def get_thumbnails(self, size: str | None = None) -> Image:
         if not size:
-            thumbnail = self.thumbnails.get("image700", {})
+            thumbnail = self.images.get("image700", {})
             if thumbnail:
                 return Image(**thumbnail)
         print()
 
+    @property
+    def get_image_content(self):
+        return self.get_thumbnails
+
+
 # did not figure out how to make a ninegag post and then subclass
-class NinegagAnimated(NinegagThumbnailsMixin,Content, ):
+class NinegagAnimated(NinegagThumbnailsMixin, Content, ):
     __tablename__ = "ninegag_animated"
     __mapper_args__ = {
         "polymorphic_identity": "ninegag_animated",
         #"concrete": True,
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
-    thumbnails = Column(JSON)
+    images = Column(JSON)
     duration: Mapped[float] = mapped_column(Float, nullable=False, )
 
 
-class NinegagPhoto(NinegagThumbnailsMixin,Content, ):
+class NinegagPhoto(NinegagThumbnailsMixin, Content, ):
     __tablename__ = "ninegag_photo"
     __mapper_args__ = {
         "polymorphic_identity": "ninegag_photo",
-        #"concrete": True,
+        # "concrete": True,
     }
     id = Column(None, ForeignKey('content.id'), primary_key=True)
-    thumbnails = Column(JSON)
+    images = Column(JSON)
     duration: Mapped[float] = mapped_column(Float, nullable=False, default=6.)
 
+
+class ContentStatistics(Base):
+    id = Column(Integer, primary_key=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    content: Mapped["Content"] = relationship(back_populates="statistics")
+    content_id = Column(Integer, ForeignKey("content.id"))
+    likes: Mapped[int | None]
+    dislikes: Mapped[int | None]
+    comments: Mapped[int | None]

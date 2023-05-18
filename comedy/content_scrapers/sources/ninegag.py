@@ -20,7 +20,7 @@ logger = logging.getLogger()
 class NinegagSource(ContentSource):
     # FIXME. JOJO, tohle je ono
     INSTANCE_DB_MODEL = NinegagPhoto or NinegagAnimated
-    SCHEMA_EXCLUDE = {"type": True, "tags": True}
+    SCHEMA_EXCLUDE = {"id": True, "type": True, "tags": True}
     API_URL = "https://9gag.com/v1"
     @staticmethod
     def _get_my_db_portal(db: Session, ) -> models.Portal:
@@ -77,6 +77,13 @@ class NinegagTagSource(NinegagSource):
             parsed["duration"] = obj.get_duration()
         except AttributeError:
             pass
+        statistics = {}
+        for k in ("likes", "dislikes", "comments",):
+            statistics[k] = parsed.pop(k)
+
+        parsed["statistics"] = [
+            models.ContentStatistics(**statistics)
+        ]
         return parsed
 
     def _cast_to_db_instance(self, obj: NinegagBase):
@@ -92,22 +99,13 @@ class NinegagTagSource(NinegagSource):
             [self._cast_to_db_instance(v) for v in self.content.values()]
         )
         # TODO: mark content source as refreshed
-        self._save_content_instances(db)
+        #self._save_content_instances(db)
         db.commit()
 
     def get_content(self) -> None:
         for i, post in enumerate(self._get_new_posts()):
             published_at:datetime.datetime = datetime.datetime.utcfromtimestamp(post["creationTs"])
             post["published_at"] = published_at
-            if False:
-                # noinspection PyUnreachableCode
-                upvotes = post["upVoteCount"]
-                downvotes = post["downVoteCount"]
-                comment_count = post["commentCount"]
-                annotation_tags = post["annotationTags"]
-                comment=post["comment"]
-                creator=post["creator"]
-
             try:
                 post_id = post["id"]
                 type_: str = post["type"].lower()

@@ -72,7 +72,7 @@ class ContentSource(ABC):
         :param obj:
         :return:
         """
-        as_dict = obj.dict(by_alias=True, exclude=self.SCHEMA_EXCLUDE)
+        as_dict = obj.dict(by_alias=False, exclude=self.SCHEMA_EXCLUDE)
         as_dict["source"] = self.source
         return as_dict
 
@@ -107,10 +107,12 @@ class ContentSource(ABC):
         existing_ids = [x.target_system_id for x in existing_sources]
         new_sources = [x for x in db_instances if x.target_system_id not in existing_ids]
 
-
-        if new_sources:
-            db.add_all(new_sources)
-            db.commit()
+        try:
+            if new_sources:
+                db.add_all(new_sources)
+                db.commit()
+        except BaseException:
+            print()
 
         self._update_source_checked_datetime(db)
         db.commit()

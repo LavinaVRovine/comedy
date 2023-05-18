@@ -1,4 +1,5 @@
-from .content import Content, Portal
+from .content import Content
+from .portal import Portal
 from .user_portal import UserPortalBase
 from .msg import Msg
 from .user_source import UserSourceFull, UserSourceFake

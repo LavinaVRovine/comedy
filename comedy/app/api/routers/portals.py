@@ -1,5 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends
+
+import app.schemas.portal
 from app import schemas
 from sqlalchemy.orm import Session
 from app.api import dependencies as deps
@@ -9,7 +11,7 @@ from app import crud, models
 router = APIRouter(responses={404: {"description": "Not found"}})
 
 
-@router.get("/", tags=["portals"], response_model=List[schemas.Portal])
+@router.get("/", tags=["portals"], response_model=List[app.schemas.portal.Portal])
 def get_supported_portals(
         db: Session = Depends(deps.get_db)
 ):

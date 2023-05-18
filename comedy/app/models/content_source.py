@@ -86,7 +86,7 @@ class YoutubeContentSource(YoutubeMixin, ContentSource, ):
     __mapper_args__ = {'polymorphic_identity': 'youtube_playlist'}
     id = Column(None, ForeignKey('source.id'), primary_key=True)
     description: Mapped[str] = mapped_column(String(6400), nullable=True)
-    thumbnails = Column(JSON)
+    images = Column(JSON)
     #portal: Mapped[Portal] = relationship(back_populates="sources", )
 
 

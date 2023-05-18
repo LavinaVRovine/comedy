@@ -1,7 +1,7 @@
 from typing import Dict
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 
 from content_scrapers.schemas.common import Image, Tag
 
@@ -19,6 +19,9 @@ class NinegagBase(BaseModel):
     description: str | None
     published_at: datetime
     tags: list[Tag] | None
+    likes: int | None = Field(alias="upVoteCount")
+    dislikes: int | None = Field(alias="downVoteCount")
+    comments: int | None = Field(alias="commentsCount")
 
     class Config:
         allow_population_by_field_name = True
@@ -43,7 +46,7 @@ class AnimatedImageSize(str, Enum):
 
 
 class NinegagPhoto(NinegagBase):
-    images: Dict[ImageSize, Image] = Field(alias="thumbnails")
+    images: Dict[ImageSize, Image] = Field(alias="images")
 
 
 class AnimatedImage(Image):
@@ -52,7 +55,7 @@ class AnimatedImage(Image):
 
 from typing import Union, Optional
 class NinegagAnimated(NinegagPhoto):
-    images: Dict[AnimatedImageSize | str, AnimatedImage | Image] = Field(alias="thumbnails")
+    images: Dict[AnimatedImageSize | str, AnimatedImage | Image] = Field(alias="images")
 
 
     def get_duration(self) -> int | None:
