@@ -2,7 +2,7 @@ from typing import Dict
 from enum import Enum
 from datetime import datetime
 from pydantic import Field, BaseModel
-
+from app import models
 from content_scrapers.schemas.common import Image, Tag
 
 
@@ -12,7 +12,7 @@ class NinegagType(str, Enum):
 
 
 class NinegagBase(BaseModel):
-    id: str = Field(alias="target_system_id")
+    target_system_id: str = Field(alias="id")
     # url: str
     title: str
     type: NinegagType
@@ -46,17 +46,8 @@ class AnimatedImageSize(str, Enum):
 
 
 class NinegagPhoto(NinegagBase):
+    MODEL_CLS = models.NinegagPhoto
     images: Dict[ImageSize, Image] = Field(alias="images")
-
-
-class AnimatedImage(Image):
-    duration: int
-    hasAudio: int | None
-
-from typing import Union, Optional
-class NinegagAnimated(NinegagPhoto):
-    images: Dict[AnimatedImageSize | str, AnimatedImage | Image] = Field(alias="images")
-
 
     def get_duration(self) -> int | None:
         for i in self.images.values():
@@ -65,3 +56,36 @@ class NinegagAnimated(NinegagPhoto):
             except AttributeError:
                 pass
         return
+    def cast_to_db_instance(self):
+        parsed = self.dict(exclude={"type": True})
+        parsed["duration"] = self.get_duration()
+        statistics = {}
+        for k in ("likes", "dislikes", "comments",):
+            statistics[k] = parsed.pop(k)
+
+        statistics = [
+            models.ContentStatistics(**statistics)
+        ]
+        # FIXME::
+        tags = [
+            #models.Topic(**t) for t in parsed.pop("tags", [])
+        ]
+        parsed.pop("tags")
+        model = self.MODEL_CLS(**parsed)
+        model.statistics = statistics
+        model.topics = tags
+        return model
+
+
+
+class AnimatedImage(Image):
+    duration: int
+    hasAudio: int | None
+
+from typing import Union, Optional
+class NinegagAnimated(NinegagPhoto):
+    MODEL_CLS = models.NinegagAnimated
+    images: Dict[AnimatedImageSize | str, AnimatedImage | Image] = Field(alias="images")
+
+
+

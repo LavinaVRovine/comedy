@@ -20,7 +20,7 @@ class Snippet(BaseModel):
 
     title: str
     description: str | None
-    thumbnails: dict[ImageSize, Image] = Field(alias="thumbnails")
+    thumbnails: dict[ImageSize, Image] = Field(alias="images")
 
 class VideoSnippet(Snippet):
     resource_id: ResourceId = Field(alias="resourceId")
