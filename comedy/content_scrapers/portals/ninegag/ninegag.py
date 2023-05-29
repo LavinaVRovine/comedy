@@ -1,25 +1,31 @@
+from typing import cast
 from requests import Session as WebSession
 from abc import ABC
 from content_scrapers.schemas.common import Tag, Topic
 from content_scrapers.schemas.ninegag import NinegagAnimated as AnimatedSchema, NinegagPhoto as PhotoSchema, \
     NinegagBase, NinegagType
-from content_scrapers.sources.connectors.web_connector import WebConnector
+from content_scrapers import schemas
+from content_scrapers.portals.connectors.web_connector import WebConnector
 from app.models import NinegagPhoto, NinegagAnimated
 import datetime
 import logging
 from app.utils import parse_key_from_url
+from content_scrapers.portals.common import ContentPortal
 
 logger = logging.getLogger()
-from content_scrapers.sources.common_new import ContentSource
 
 
-class NinegagSource(ContentSource, ABC):
+
+class NinegagPortal(ContentPortal, ABC):
     API_URL = "https://9gag.com/v1"
 
     def __init__(self):
-        super(NinegagSource, self).__init__()
+        super(NinegagPortal, self).__init__()
         self._connector: WebSession = WebConnector()
         self.topics: list[Tag | Topic] = []
+        self.content = cast(
+            dict[str, schemas.NinegagPhoto | schemas.NinegagAnimated], self.content
+        )
 
     @property
     def url(self):
@@ -79,21 +85,24 @@ class NinegagSource(ContentSource, ABC):
         return
 
 
-class NinegagSourceTag(NinegagSource):
+class NinegagSourceTag(NinegagPortal):
     def __init__(self, source_name: str):
         super(NinegagSourceTag, self).__init__()
+        self.source_name: str = source_name
         self._url = f"{self.API_URL}/tag-posts/tag/{source_name}"
 
 
-class NinegagSourceGroup(NinegagSource):
+class NinegagSourceGroup(NinegagPortal):
     def __init__(self):
         super(NinegagSourceGroup, self).__init__()
-        self._url = f"{self.API_URL}/group-posts/group/default/type/hot"
+        self.source_name: str = "top"
+        self._url = f"{self.API_URL}/group-posts/group/default/type/{self.source_name}"
     # FIXME: tohle je zase co pici
     def _get_new_posts(self, next_cursor: str | None = None, nth_iter: int = 0):
         response_json = self._fetch_new_posts(
             next_cursor
         )
+        # FIXME: vyres to ze je tag, tags a topics
         self.tags = [Tag(**t) for t in response_json.get("tags", [])]
 
         return response_json["posts"]

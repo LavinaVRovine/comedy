@@ -1,17 +1,17 @@
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app import models
 from app.core.config import settings
 from app.db import base  # noqa: F401
-from app.models import Portal, ContentSource
-from app.models.content_source import YoutubeContentSource
-from app.models.user_content import UserPortal, UserSource, UserContent
+
 # make sure all SQL Alchemy models are imported (app.db.base) before initializing DB
 # otherwise, SQL Alchemy might fail to initialize relationships properly
 # for more details: https://github.com/tiangolo/full-stack-fastapi-postgresql/issues/28
-from content_scrapers.content_controller import ContentBridge
 from content_scrapers.refresh import refresh_portal
 from app.schemas.source import SourceCreate
+from source_managers import init_manager_from_class
+from app.supported_portals import SupportedPortals
 
 
 def init_db(db: Session, engine=None) -> None:
@@ -21,20 +21,15 @@ def init_db(db: Session, engine=None) -> None:
     base.Base.metadata.drop_all(bind=engine,)# tables={k:v for k, v in base.Base.metadata.tables.items() if k != "user"})
     base.Base.metadata.create_all(bind=engine)
 
-    p = Portal(
-        id=1, name="Youtube", url="whatever", img_path="youtube.png", syncable=True
-    )
 
-    p2 = Portal(
-        id=2, name="Ninegag", url="whatever2", img_path="9gag.png"
-    )
 
-    db.add(p)
-    db.add(p2)
+    db.add(SupportedPortals.youtube)
+    db.add(SupportedPortals.ninegag)
 
     top_source = crud.source.create(db, obj_in=SourceCreate(target_system_id="top", source_name="top", portal_id=p2.id, recommended=True))
 
-    ContentBridge(content_source_to_refresh=top_source).refresh(db)
+    manager = init_manager_from_class(top_source)
+    manager.refresh(db)
 
     user = crud.user.get_by_email(db, email=settings.FIRST_SUPERUSER)
     if not user:
@@ -47,17 +42,17 @@ def init_db(db: Session, engine=None) -> None:
         # TODO: add this followed portals
         schemas.UserUpdate()
 
-        u_p = UserPortal(
+        u_p = models.UserPortal(
             user=user,
-            portal=p,
+            portal=SupportedPortals.youtube,
 
         )
-        user_portal_ninegag = UserPortal(
+        user_portal_ninegag = models.UserPortal(
             user=user,
-            portal=p2,
+            portal=SupportedPortals.ninegag,
 
         )
-        u_s = UserSource(
+        u_s = models.UserSource(
             watching=True,
             is_active=True,
             user_portal=user_portal_ninegag,
@@ -75,7 +70,7 @@ def init_db(db: Session, engine=None) -> None:
     refresh_portal(2)
     refresh_portal(1)
 
-    seen_content = UserContent(
+    seen_content = models.UserContent(
             content_id=1,
             user=user
         )
@@ -83,4 +78,3 @@ def init_db(db: Session, engine=None) -> None:
     db.add(seen_content)
 
     db.commit()
-    print()

@@ -1,30 +1,31 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from typing import cast
 
-from app.models import Portal, ContentSource as ContentSourceModel
 from app import models
 from app.models.content_source import YoutubeContentSource
 from content_scrapers.schemas.youtube import YoutubeUploadsPlaylist
-from content_scrapers.sources.common import ContentSource
-from content_scrapers.sources.connectors.youtube_connector import YoutubePortalConnector
+from content_scrapers.portals.common import ContentPortal
+from content_scrapers.portals.connectors.youtube_connector import YoutubePortalConnector
+from content_scrapers import schemas
 
-
-class YoutubeUploadedPlaylist(ContentSource):
+class YoutubeUploadedPlaylist(ContentPortal):
     INSTANCE_DB_MODEL = YoutubeContentSource
     SCHEMA_EXCLUDE = {"kind": True}
 
     def __init__(self):
         # ehm totally unsure about that source. Its there so i do not have to worry about failing save
-        super(YoutubeUploadedPlaylist, self).__init__(source=None)
+        super(YoutubeUploadedPlaylist, self).__init__()
         self._connector = YoutubePortalConnector()
         self.service = self.connector.service
-        self.portal = None
+        self.content = cast(dict[str, schemas.YoutubeUploadsPlaylist], self.content)
+        # self.portal = None
 
-    @staticmethod
-    def _get_my_db_portal(db: Session, ) -> models.Portal:
-        return db.execute(
-            select(Portal).where(Portal.slug == "youtube")
-        ).scalar()
+    # @staticmethod
+    # def _get_my_db_portal(db: Session, ) -> models.Portal:
+    #     return db.execute(
+    #         select(Portal).where(Portal.slug == "youtube")
+    #     ).scalar()
 
     @staticmethod
     def replace_channel_id_with_uploads_playlist_id(id_: str):
@@ -51,29 +52,29 @@ class YoutubeUploadedPlaylist(ContentSource):
             "portal": self.portal
         }
 
-    def _update_source_checked_datetime(self, db: Session):
-        return
+    # def _update_source_checked_datetime(self, db: Session):
+    #     return
 
-    def save(self, db: Session, ):
-        super(YoutubeUploadedPlaylist, self).save(db)
-        if not self.portal:
-            self.portal = self._get_my_db_portal(db)
-        return self._save_new_content_instances_and_update(db=db)
-        statement = select(ContentSourceModel).where(ContentSourceModel.source_id.in_(
-            [s.id for s in self.content]
-        ))
-
-        existing_sources = db.execute(
-            statement
-        ).scalars().all()
-        existing_ids = [x.target_system_id for x in existing_sources]
-        new_sources = [self._cast_to_db_instance(x) for x in self.content if
-                       x.id not in existing_ids]
-        if new_sources:
-            db.add_all(new_sources)
-            db.commit()
-
-        return existing_sources + new_sources
+    # def save(self, db: Session, ):
+    #     super(YoutubeUploadedPlaylist, self).save(db)
+    #     if not self.portal:
+    #         self.portal = self._get_my_db_portal(db)
+    #     return self._save_new_content_instances_and_update(db=db)
+    #     statement = select(ContentSourceModel).where(ContentSourceModel.source_id.in_(
+    #         [s.id for s in self.content]
+    #     ))
+    #
+    #     existing_sources = db.execute(
+    #         statement
+    #     ).scalars().all()
+    #     existing_ids = [x.target_system_id for x in existing_sources]
+    #     new_sources = [self._cast_to_db_instance(x) for x in self.content if
+    #                    x.id not in existing_ids]
+    #     if new_sources:
+    #         db.add_all(new_sources)
+    #         db.commit()
+    #
+    #     return existing_sources + new_sources
 
     def get_content(self) -> None:
         """

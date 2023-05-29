@@ -5,6 +5,7 @@ from .content_source import ContentSource
 from sqlalchemy import Column, INTEGER,Integer, String, DateTime, JSON, ForeignKey, Table, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime
+from content_scrapers import schemas
 
 
 content_topic = Table(
@@ -47,6 +48,10 @@ class Content(Base):
     def remote_link(self):
         return f"{self.REMOTE_LINK_PREFIX}{self.target_system_id}"
 
+    @classmethod
+    @abc.abstractmethod
+    def from_schema(cls, obj, source: ContentSource):
+        raise NotImplementedError
 
 class YoutubeVideo(Content):
     REMOTE_LINK_PREFIX = "https://www.youtube.com/watch?v="
@@ -68,7 +73,9 @@ class YoutubeVideo(Content):
     @property
     def get_image_content(self):
         return self.get_thumbnails
-
+    @classmethod
+    def from_schema(cls, obj: schemas.YoutubeVideoBase, source):
+        parsed = obj.dict(exclude={"kind": True, "topic_details": True, })
 
 class Topic(Base):
     __tablename__ = "topic"
@@ -93,6 +100,28 @@ class NinegagThumbnailsMixin:
     @property
     def get_image_content(self):
         return self.get_thumbnails
+
+    @classmethod
+    def from_schema(cls, obj: schemas.NinegagPhoto | schemas.NinegagAnimated, source):
+        parsed = obj.dict(exclude={"type": True})
+
+        statistics = {}
+        for k in ("likes", "dislikes", "comments",):
+            statistics[k] = parsed.pop(k)
+
+        statistics = [
+            ContentStatistics(**statistics)
+        ]
+        # FIXME::
+        tags = [
+            # models.Topic(**t) for t in parsed.pop("tags", [])
+        ]
+        parsed.pop("tags")
+        # noinspection PyArgumentList
+        model = cls(**parsed)
+        model.source = source
+        model.statistics = statistics
+        return model
 
 
 # did not figure out how to make a ninegag post and then subclass

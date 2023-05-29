@@ -3,6 +3,7 @@ from sqlalchemy import select, and_
 from app.crud.base import CRUDBase
 from app import crud
 from app.schemas.source import SourceSimplified, SourceUpdate, SourceCreate
+from source_managers import init_manager_from_class
 from app import models
 from fastapi.encoders import jsonable_encoder
 class CRUDSource(CRUDBase[models.ContentSource, SourceCreate, SourceUpdate]):
@@ -44,8 +45,7 @@ class CRUDSource(CRUDBase[models.ContentSource, SourceCreate, SourceUpdate]):
     def refresh_source_and_get_new_content(self, db: Session, source_id: int):
         # iam leaving this here for now but probably not needed
         s = self.get(db=db, id=source_id)
-        from content_scrapers.content_controller import ContentBridge
-        c = ContentBridge(content_source_to_refresh=s)
+        c = init_manager_from_class(s)
         new_thingis = c.refresh(db=db)
         return new_thingis
 

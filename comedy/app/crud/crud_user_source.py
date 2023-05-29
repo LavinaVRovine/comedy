@@ -10,7 +10,7 @@ from app import models
 from app.models.user import User
 from app.models.content_source import Portal, ContentSource
 from app.models.user_content import UserPortal, UserSource
-from content_scrapers.content_controller import ContentBridge
+
 
 from app.schemas.user_source import UserSourceFull as UserSourceSchema, UserSourceUpdate
 from app.schemas import UserSourceFake
@@ -19,7 +19,7 @@ from app.crud.crud_source import source as crud_source
 from app import crud
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from content_scrapers.sources.common import ContentSource
+    from content_scrapers.portals.common import ContentPortal
 
 
 # noinspection PyMethodMayBeStatic
@@ -36,7 +36,7 @@ class CRUDUserSource(CRUDBase[UserSource, UserSourceSchema, UserSourceUpdate]):
         db.refresh(db_obj)
         return db_obj
         user_source_in.source = crud.source.get(db, id=user_source_in.source.id)
-    def _sync_user_sources_with_syncable_portal(self, db: Session, *, user_portal: UserPortal, portal_connector: "ContentSource" ):
+    def _sync_user_sources_with_syncable_portal(self, db: Session, *, user_portal: UserPortal, portal_connector: "ContentPortal"):
         """
         Get sources from portal that supports user specific sources inthere. FOr instance
         followed users in Youtuve

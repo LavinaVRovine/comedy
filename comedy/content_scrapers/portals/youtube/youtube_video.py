@@ -10,17 +10,17 @@ from app.models.content import Topic
 from app import models
 from config import DEBUGGING
 from content_scrapers.schemas.youtube import YoutubeVideoBase
-from content_scrapers.sources.common import ContentSource
-from content_scrapers.sources.connectors.youtube_connector import MAX_RESULTS, YoutubePortalConnector
+from content_scrapers.portals.common import ContentPortal
+from content_scrapers.portals.connectors.youtube_connector import MAX_RESULTS, YoutubePortalConnector
 from app.utils import parse_key_from_url
 from content_scrapers.schemas.common import Topic
 
-class YoutubeVideoSource(ContentSource):
+class YoutubeVideoPortal(ContentPortal):
     INSTANCE_DB_MODEL = YoutubeVideo
     SCHEMA_EXCLUDE = {"kind": True, "topic_details": True, }
 
     def __init__(self, source):
-        super(YoutubeVideoSource, self).__init__(source)
+        super(YoutubeVideoPortal, self).__init__(source)
         self._connector = YoutubePortalConnector()
         self.service = self.connector.service
         self.playlist_id = self.source.target_system_id
@@ -135,7 +135,7 @@ class YoutubeVideoSource(ContentSource):
         if not self.content:
             self.get_content()
         self._save_set_topics(db)
-        super(YoutubeVideoSource, self).save(db)
+        super(YoutubeVideoPortal, self).save(db)
 
     def get_content(self) -> None:
         response_dict: dict = self._get_new_videos_since()

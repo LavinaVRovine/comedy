@@ -1,15 +1,13 @@
 from abc import ABC, abstractmethod
-from content_scrapers.sources.connectors.common import Connector
+from content_scrapers.portals.connectors.common import Connector
+from pydantic import BaseModel
 
 
-class ContentSource(ABC):
+class ContentPortal(ABC):
 
-    def __init__(self, source_name: str | None = None):
-
-        self.raw_content = None
-        self.content: dict[str, dict] = {}
+    def __init__(self,):
+        self.content: dict[str, BaseModel] = {}
         self._connector: Connector = None
-
 
     @property
     def connector(self):

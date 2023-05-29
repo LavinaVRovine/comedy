@@ -10,8 +10,9 @@ from sqlalchemy.orm import Mapped, relationship, mapped_column
 # noinspection PyPackageRequirements
 from slugify import slugify
 from app.db.base_class import Base
-from content_scrapers.schemas.common import Image, ImageNoSize
+from content_scrapers.schemas.common import ImageNoSize
 from .youtube_helper import YoutubeMixin
+
 def sluggify_name(context):
     return slugify(
         context.get_current_parameters()["name"]
@@ -34,6 +35,7 @@ class Portal(Base):
     )
     user_portals: Mapped[list["UserPortal"]] = relationship(back_populates="portal")
     users: Mapped[list["User"]] = relationship(viewonly=True, secondary="user_portal",)# back_populates="followed_portals")
+
 
     @property
     def get_thumbnails(self):
