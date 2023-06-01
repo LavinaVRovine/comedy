@@ -12,6 +12,11 @@ class ImageSize(str, Enum):
     maxres = "maxres"
 
 
+class YoutubeBase(BaseModel):
+    id: str = Field(alias="target_system_id")
+    kind: str
+
+
 class ResourceId(BaseModel):
     video_id: str = Field(alias="videoId")
 
@@ -21,23 +26,25 @@ class Snippet(BaseModel):
     title: str
     description: str | None
     thumbnails: dict[ImageSize, Image] = Field(alias="images")
+    class Config:
+        allow_population_by_field_name = True
 
 class VideoSnippet(Snippet):
     resource_id: ResourceId = Field(alias="resourceId")
+
+
 class ContentDetails(BaseModel):
     duration: int
 
 
 class TopicDetails(BaseModel):
     topic_categories: list[str] = Field(alias="topicCategories")
+
     class Config:
         allow_population_by_field_name = False
 
-class YoutubeBase(BaseModel):
-    id: str = Field(alias="target_system_id")
-    kind: str
 
-class YoutubeVideoBase(YoutubeBase):
+class YoutubeVideo(YoutubeBase):
     # ID is just an arbitrary ID returned. Video Id is in snippet
     id: str | None = Field(alias="target_system_id")
     snippet: VideoSnippet
@@ -47,17 +54,18 @@ class YoutubeVideoBase(YoutubeBase):
 
     description: str | None
     topic_details: TopicDetails | None = Field(alias="topicDetails", )
-    #topicDetails: TopicDetails | None = Field(alias="topic_details")
+
     class Config:
         allow_population_by_field_name = True
-
-
 
 
 class ChannelId(BaseModel):
     channelId: str = Field(alias="channel_id")
+
     class Config:
         allow_population_by_field_name = True
+
+
 class SubscriptionSnippet(Snippet):
     # FIXME: inconsistency between these data fields. Should I specify string and then cast
     #  or should i first cast and specify datetime here?

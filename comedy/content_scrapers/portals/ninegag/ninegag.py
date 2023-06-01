@@ -6,7 +6,6 @@ from content_scrapers.schemas.ninegag import NinegagAnimated as AnimatedSchema, 
     NinegagBase, NinegagType
 from content_scrapers import schemas
 from content_scrapers.portals.connectors.web_connector import WebConnector
-from app.models import NinegagPhoto, NinegagAnimated
 import datetime
 import logging
 from app.utils import parse_key_from_url
@@ -22,7 +21,6 @@ class NinegagPortal(ContentPortal, ABC):
     def __init__(self):
         super(NinegagPortal, self).__init__()
         self._connector: WebSession = WebConnector()
-        self.topics: list[Tag | Topic] = []
         self.content = cast(
             dict[str, schemas.NinegagPhoto | schemas.NinegagAnimated], self.content
         )

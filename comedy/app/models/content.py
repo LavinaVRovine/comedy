@@ -74,7 +74,7 @@ class YoutubeVideo(Content):
     def get_image_content(self):
         return self.get_thumbnails
     @classmethod
-    def from_schema(cls, obj: schemas.YoutubeVideoBase, source):
+    def from_schema(cls, obj: schemas.YoutubeVideo, source):
         parsed = obj.dict(exclude={"kind": True, "topic_details": True, })
 
 class Topic(Base):

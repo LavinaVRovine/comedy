@@ -1,31 +1,16 @@
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 from typing import cast
-
-from app import models
-from app.models.content_source import YoutubeContentSource
-from content_scrapers.schemas.youtube import YoutubeUploadsPlaylist
 from content_scrapers.portals.common import ContentPortal
 from content_scrapers.portals.connectors.youtube_connector import YoutubePortalConnector
 from content_scrapers import schemas
 
-class YoutubeUploadedPlaylist(ContentPortal):
-    INSTANCE_DB_MODEL = YoutubeContentSource
-    SCHEMA_EXCLUDE = {"kind": True}
 
-    def __init__(self):
-        # ehm totally unsure about that source. Its there so i do not have to worry about failing save
+class YoutubeUploadedPlaylist(ContentPortal):
+
+    def __init__(self, connector=YoutubePortalConnector()):
         super(YoutubeUploadedPlaylist, self).__init__()
-        self._connector = YoutubePortalConnector()
+        self._connector = connector
         self.service = self.connector.service
         self.content = cast(dict[str, schemas.YoutubeUploadsPlaylist], self.content)
-        # self.portal = None
-
-    # @staticmethod
-    # def _get_my_db_portal(db: Session, ) -> models.Portal:
-    #     return db.execute(
-    #         select(Portal).where(Portal.slug == "youtube")
-    #     ).scalar()
 
     @staticmethod
     def replace_channel_id_with_uploads_playlist_id(id_: str):
@@ -41,16 +26,13 @@ class YoutubeUploadedPlaylist(ContentPortal):
         subscription_response_obj["id"] = playlist_id
         return subscription_response_obj
 
-    def get_my_subscriptions(self):
-        return self.get_content()
-
-    def _prepare_db_instance(self, obj: YoutubeUploadsPlaylist) -> dict:
-        return {
-            "target_system_id": obj.id, "source_name": obj.snippet.title,
-            "description": obj.snippet.description,
-            "thumbnails": {k: v.dict() for k, v in obj.snippet.thumbnails.items()},
-            "portal": self.portal
-        }
+    # def _prepare_db_instance(self, obj: YoutubeUploadsPlaylist) -> dict:
+    #     return {
+    #         "target_system_id": obj.id, "source_name": obj.snippet.title,
+    #         "description": obj.snippet.description,
+    #         "thumbnails": {k: v.dict() for k, v in obj.snippet.thumbnails.items()},
+    #         "portal": self.portal
+    #     }
 
     # def _update_source_checked_datetime(self, db: Session):
     #     return
@@ -84,7 +66,7 @@ class YoutubeUploadedPlaylist(ContentPortal):
         resource_ = self.service.subscriptions()
 
         content = {i:
-            YoutubeUploadsPlaylist.parse_obj(
+            schemas.YoutubeUploadsPlaylist.parse_obj(
                 self._add_uploads_playlist_id(x)) for i, x in enumerate(self.connector.fetch_list_items(
             resource_, "snippet", mine=True
         ))
